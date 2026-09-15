@@ -1,25 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod_template/error_handling_screen/error_screen/error_screen.dart';
-import 'package:flutter_riverpod_template/error_handling_screen/no_internet_screen/no_internet_screen.dart';
-import 'package:flutter_riverpod_template/error_handling_screen/not_found_screen/not_found_screen.dart';
-import 'package:flutter_riverpod_template/routes/app_routes_key.dart';
-import 'package:flutter_riverpod_template/routes/internet_check_provider.dart';
-import 'package:flutter_riverpod_template/screens/app_navigation/app_navigation_screen.dart';
-import 'package:flutter_riverpod_template/screens/auth_screen/forgot_screen/forgot_screen.dart';
-import 'package:flutter_riverpod_template/screens/auth_screen/on_board_screen/on_board_screen.dart';
-import 'package:flutter_riverpod_template/screens/auth_screen/sign_in_screen/sign_in_screen.dart';
-import 'package:flutter_riverpod_template/screens/auth_screen/sign_up_screen/sign_up_screen.dart';
-import 'package:flutter_riverpod_template/screens/auth_screen/sign_up_verify_screen/sign_up_verify_screen.dart';
-import 'package:flutter_riverpod_template/screens/base_screen/about_us_screen/about_us_screen.dart';
-import 'package:flutter_riverpod_template/screens/base_screen/faq_screen/faq_screen.dart';
-import 'package:flutter_riverpod_template/screens/base_screen/privacy_policy_screen/privacy_policy_screen.dart';
-import 'package:flutter_riverpod_template/screens/base_screen/terms_and_conditions_screen/terms_and_conditions_screen.dart';
-import 'package:flutter_riverpod_template/screens/home_screen/home_screen.dart';
-import 'package:flutter_riverpod_template/screens/profile_screen/profile_screen.dart';
-import 'package:flutter_riverpod_template/screens/splash_screen/splash_screen.dart';
-import 'package:flutter_riverpod_template/utils/app_log.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc_template/error_handling_screen/error_screen/error_screen.dart';
+import 'package:flutter_bloc_template/error_handling_screen/no_internet_screen/no_internet_screen.dart';
+import 'package:flutter_bloc_template/error_handling_screen/not_found_screen/not_found_screen.dart';
+import 'package:flutter_bloc_template/routes/app_routes_key.dart';
+import 'package:flutter_bloc_template/routes/internet_cubit.dart';
+import 'package:flutter_bloc_template/screens/app_navigation/app_navigation_screen.dart';
+import 'package:flutter_bloc_template/screens/auth_screen/forgot_screen/forgot_screen.dart';
+import 'package:flutter_bloc_template/screens/auth_screen/on_board_screen/on_board_screen.dart';
+import 'package:flutter_bloc_template/screens/auth_screen/sign_in_screen/sign_in_screen.dart';
+import 'package:flutter_bloc_template/screens/auth_screen/sign_up_screen/sign_up_screen.dart';
+import 'package:flutter_bloc_template/screens/auth_screen/sign_up_verify_screen/sign_up_verify_screen.dart';
+import 'package:flutter_bloc_template/screens/base_screen/about_us_screen/about_us_screen.dart';
+import 'package:flutter_bloc_template/screens/base_screen/faq_screen/faq_screen.dart';
+import 'package:flutter_bloc_template/screens/base_screen/privacy_policy_screen/privacy_policy_screen.dart';
+import 'package:flutter_bloc_template/screens/base_screen/terms_and_conditions_screen/terms_and_conditions_screen.dart';
+import 'package:flutter_bloc_template/screens/home_screen/home_screen.dart';
+import 'package:flutter_bloc_template/screens/profile_screen/profile_screen.dart';
+import 'package:flutter_bloc_template/screens/splash_screen/splash_screen.dart';
+import 'package:flutter_bloc_template/utils/app_log.dart';
 import 'package:go_router/go_router.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -111,11 +111,7 @@ class AppRoutes {
       return NotFoundScreen();
     },
     redirect: (context, state) {
-      final container = ProviderScope.containerOf(context, listen: false);
-      final asyncStatus = container.read(internetStatusProvider);
-      if (asyncStatus.isLoading) return null;
-      if (asyncStatus.hasError) return "/${AppRoutesKey.instance.errorScreen}";
-      final isOnline = asyncStatus.value ?? true;
+      final isOnline = context.read<InternetCubit>().state;
       final goingToNoInternet = state.name == AppRoutesKey.instance.noInternetScreen;
 
       // Auth flow screens that should not be interrupted by connectivity changes

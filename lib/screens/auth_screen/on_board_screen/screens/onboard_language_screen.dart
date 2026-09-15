@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod_template/constant/app_asserts_image_path.dart';
-import 'package:flutter_riverpod_template/constant/app_colors.dart';
-import 'package:flutter_riverpod_template/models/app_language_model.dart';
-import 'package:flutter_riverpod_template/routes/app_routes.dart';
-import 'package:flutter_riverpod_template/routes/app_routes_key.dart';
-import 'package:flutter_riverpod_template/services/storage/storage_services.dart';
-import 'package:flutter_riverpod_template/utils/app_log.dart';
-import 'package:flutter_riverpod_template/utils/app_size.dart';
-import 'package:flutter_riverpod_template/utils/app_snack_bar.dart';
-import 'package:flutter_riverpod_template/utils/gap.dart';
-import 'package:flutter_riverpod_template/widgets/texts/languages/language_provider.dart';
-import 'package:flutter_riverpod_template/widgets/app_image/app_image.dart';
-import 'package:flutter_riverpod_template/widgets/buttons/app_button.dart';
-import 'package:flutter_riverpod_template/widgets/inputs/app_input_widget.dart';
-import 'package:flutter_riverpod_template/widgets/texts/app_text.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc_template/constant/app_asserts_image_path.dart';
+import 'package:flutter_bloc_template/constant/app_colors.dart';
+import 'package:flutter_bloc_template/models/app_language_model.dart';
+import 'package:flutter_bloc_template/routes/app_routes.dart';
+import 'package:flutter_bloc_template/routes/app_routes_key.dart';
+import 'package:flutter_bloc_template/services/storage/storage_services.dart';
+import 'package:flutter_bloc_template/utils/app_log.dart';
+import 'package:flutter_bloc_template/utils/app_size.dart';
+import 'package:flutter_bloc_template/utils/app_snack_bar.dart';
+import 'package:flutter_bloc_template/utils/gap.dart';
+import 'package:flutter_bloc_template/widgets/texts/languages/language_cubit.dart';
+import 'package:flutter_bloc_template/widgets/app_image/app_image.dart';
+import 'package:flutter_bloc_template/widgets/buttons/app_button.dart';
+import 'package:flutter_bloc_template/widgets/inputs/app_input_widget.dart';
+import 'package:flutter_bloc_template/widgets/texts/app_text.dart';
 
 class OnboardLanguageScreen extends StatefulWidget {
   const OnboardLanguageScreen({super.key});
@@ -62,7 +62,7 @@ class _OnboardLanguageScreenState extends State<OnboardLanguageScreen> {
     }
   }
 
-  Future<void> continueFunction(WidgetRef ref) async {
+  Future<void> continueFunction() async {
     try {
       var findIndex = result.indexWhere((element) => element.isSelected);
       if (findIndex.isNegative) {
@@ -70,7 +70,7 @@ class _OnboardLanguageScreenState extends State<OnboardLanguageScreen> {
         return;
       }
       var item = result[findIndex];
-      await ref.read(languageProvider.notifier).setLanguage(item.value);
+      await context.read<LanguageCubit>().setLanguage(item.value);
       await storageServices.setAppFirstTime();
       await Future.delayed(const Duration(milliseconds: 200));
       AppRoutes.instance.go(AppRoutesKey.instance.signInScreen);
@@ -157,20 +157,14 @@ class _OnboardLanguageScreenState extends State<OnboardLanguageScreen> {
         ),
       ),
       bottomNavigationBar: SafeArea(
-        child: Consumer(
-          builder: (context, ref, child) {
-            return AppButton(
-              onTap: () {
-                continueFunction(ref);
-              },
-              title: "Continue",
-              height: AppSize.size.width * 0.15,
-              backgroundColor: AppColors.instance.success,
-              borderColor: AppColors.instance.success,
-              loaderColor: AppColors.instance.white50,
-              margin: EdgeInsets.symmetric(horizontal: AppSize.size.width * 0.1, vertical: AppSize.size.width * 0.05),
-            );
-          },
+        child: AppButton(
+          onTap: continueFunction,
+          title: "Continue",
+          height: AppSize.size.width * 0.15,
+          backgroundColor: AppColors.instance.success,
+          borderColor: AppColors.instance.success,
+          loaderColor: AppColors.instance.white50,
+          margin: EdgeInsets.symmetric(horizontal: AppSize.size.width * 0.1, vertical: AppSize.size.width * 0.05),
         ),
       ),
     );

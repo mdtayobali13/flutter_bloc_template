@@ -1,28 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod_template/constant/app_asserts_image_path.dart';
-import 'package:flutter_riverpod_template/constant/app_colors.dart';
-import 'package:flutter_riverpod_template/routes/app_routes.dart';
-import 'package:flutter_riverpod_template/routes/app_routes_key.dart';
-import 'package:flutter_riverpod_template/screens/auth_screen/sign_in_screen/provider/sign_in_provider.dart';
-import 'package:flutter_riverpod_template/services/storage/storage_services.dart';
-import 'package:flutter_riverpod_template/utils/app_log.dart';
-import 'package:flutter_riverpod_template/utils/app_size.dart';
-import 'package:flutter_riverpod_template/utils/app_snack_bar.dart';
-import 'package:flutter_riverpod_template/utils/gap.dart';
-import 'package:flutter_riverpod_template/widgets/app_image/app_image.dart';
-import 'package:flutter_riverpod_template/widgets/buttons/app_button.dart';
-import 'package:flutter_riverpod_template/widgets/inputs/app_input_widget_tow.dart';
-import 'package:flutter_riverpod_template/widgets/texts/app_text.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc_template/constant/app_asserts_image_path.dart';
+import 'package:flutter_bloc_template/constant/app_colors.dart';
+import 'package:flutter_bloc_template/routes/app_routes.dart';
+import 'package:flutter_bloc_template/routes/app_routes_key.dart';
+import 'package:flutter_bloc_template/screens/auth_screen/sign_in_screen/cubit/sign_in_cubit.dart';
+import 'package:flutter_bloc_template/services/storage/storage_services.dart';
+import 'package:flutter_bloc_template/utils/app_log.dart';
+import 'package:flutter_bloc_template/utils/app_size.dart';
+import 'package:flutter_bloc_template/utils/app_snack_bar.dart';
+import 'package:flutter_bloc_template/utils/gap.dart';
+import 'package:flutter_bloc_template/widgets/app_image/app_image.dart';
+import 'package:flutter_bloc_template/widgets/buttons/app_button.dart';
+import 'package:flutter_bloc_template/widgets/inputs/app_input_widget_tow.dart';
+import 'package:flutter_bloc_template/widgets/texts/app_text.dart';
 
-class SignInScreen extends ConsumerStatefulWidget {
+class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
 
   @override
-  ConsumerState<SignInScreen> createState() => _SignInScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => SignInCubit(),
+      child: const _SignInView(),
+    );
+  }
 }
 
-class _SignInScreenState extends ConsumerState<SignInScreen> {
+class _SignInView extends StatefulWidget {
+  const _SignInView();
+
+  @override
+  State<_SignInView> createState() => _SignInViewState();
+}
+
+class _SignInViewState extends State<_SignInView> {
   late TextEditingController emailTextEditingController;
   late TextEditingController passwordTextEditingController;
   late GlobalKey<FormState> formKey;
@@ -32,9 +44,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!formKey.currentState!.validate()) {
         return;
       }
-      final response = await ref
-          .read(signInProvider.notifier)
-          .signIn(emailTextEditingController.text.trim(), passwordTextEditingController.text.trim());
+      final response = await context.read<SignInCubit>().signIn(
+            emailTextEditingController.text.trim(),
+            passwordTextEditingController.text.trim(),
+          );
       if (response) {
         AppRoutes.instance.go(AppRoutesKey.instance.homeScreen);
       } else {
@@ -50,15 +63,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       await StorageServices.instance.setAppRoll("GUEST");
       AppRoutes.instance.pushNamed(AppRoutesKey.instance.homeScreen);
     } catch (e) {
-      errorLog("checkLoginFunction", e);
+      errorLog("continueAsGuest", e);
     }
   }
 
   void onInitialApp() {
     try {
-      emailTextEditingController = .new();
-      passwordTextEditingController = .new();
-      formKey = .new();
+      emailTextEditingController = TextEditingController();
+      passwordTextEditingController = TextEditingController();
+      formKey = GlobalKey<FormState>();
     } catch (e) {
       errorLog("onInitialApp", e);
     }
@@ -68,6 +81,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void initState() {
     super.initState();
     onInitialApp();
+  }
+
+  @override
+  void dispose() {
+    emailTextEditingController.dispose();
+    passwordTextEditingController.dispose();
+    super.dispose();
   }
 
   @override
@@ -89,38 +109,39 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       child: AppImage(width: AppSize.size.width * 0.8, path: AppAssertsImagePath.instance.logo),
                     ),
                   ),
-
-                  SizedBox(
-                    width: AppSize.size.width * 0.8,
-                    child: AppText(
-                      text: "Welcome back! Please login to your account.",
-                      textAlign: TextAlign.center,
-
-                      fontWeight: FontWeight.w500,
-                      height: 1.5,
-                      fontSize: AppSize.width(value: 18),
-                    ),
+                  Gap(height: 20),
+                  AppText(
+                    text: "Welcome Back",
+                    fontSize: AppSize.width(value: 26),
+                    fontWeight: FontWeight.w600,
                   ),
+                  Gap(height: 10),
+                  AppText(
+                    text: "Sign in to continue",
+                    fontSize: AppSize.width(value: 14),
+                    color: AppColors.instance.dark400,
+                  ),
+                  Gap(height: 30),
                   AppInputWidgetTwo(
-                    validator: (String? value) {
-                      if (value?.isEmpty == true) {
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
                         return "Enter your email";
                       }
                       return null;
                     },
                     title: "Email",
-                    isEmail: true,
-                    keyboardType: TextInputType.emailAddress,
                     controller: emailTextEditingController,
+                    keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                   ),
+                  Gap(height: 15),
                   AppInputWidgetTwo(
-                    validator: (String? value) {
-                      if (value?.isEmpty == true) {
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
                         return "Enter your password";
                       }
-                      if (value!.length < 6) {
-                        return "Al least 6 character";
+                      if (value.length < 6) {
+                        return "At least 6 characters";
                       }
                       return null;
                     },
@@ -132,11 +153,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     textInputAction: TextInputAction.done,
                   ),
                   Gap(height: 30),
-                  Consumer(
-                    builder: (context, ref, child) {
-                      var provider = ref.watch(signInProvider);
+                  BlocBuilder<SignInCubit, bool>(
+                    builder: (context, isLoading) {
                       return AppButton(
-                        isLoading: provider,
+                        isLoading: isLoading,
                         onTap: checkLoginFunction,
                         title: "Login",
                         backgroundColor: AppColors.instance.success,
@@ -159,25 +179,38 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   Gap(height: 30),
                   InkWell(
                     onTap: () {
+                      AppRoutes.instance.pushNamed(AppRoutesKey.instance.signUpScreen);
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AppText(
+                          text: "Don't have an account? ",
+                          fontSize: AppSize.width(value: 14),
+                          color: AppColors.instance.dark400,
+                        ),
+                        AppText(
+                          text: "Sign Up",
+                          fontSize: AppSize.width(value: 14),
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.instance.success,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Gap(height: 15),
+                  InkWell(
+                    onTap: () {
                       AppRoutes.instance.pushNamed(AppRoutesKey.instance.forgotScreen);
                     },
-                    overlayColor: WidgetStatePropertyAll(Colors.transparent),
-                    child: AppText(text: "Forgot password?", fontWeight: FontWeight.w600, color: AppColors.instance.error),
+                    child: AppText(
+                      text: "Forgot Password?",
+                      fontSize: AppSize.width(value: 14),
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.instance.success,
+                    ),
                   ),
-                  Gap(height: 10),
-                  Wrap(
-                    children: [
-                      AppText(text: "Don't have an account?"),
-                      Gap(width: 10),
-                      InkWell(
-                        onTap: () {
-                          AppRoutes.instance.pushNamed(AppRoutesKey.instance.signUpScreen);
-                        },
-                        overlayColor: WidgetStatePropertyAll(Colors.transparent),
-                        child: AppText(text: "Sign up", fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
+                  Gap(height: 30),
                 ],
               ),
             ),

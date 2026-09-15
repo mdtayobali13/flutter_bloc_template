@@ -822,3 +822,4 @@ fvm flutter pub get
 "# flutter_riverpod_template" 
 "# flutter_riverpod_template" 
 "# flutter_bloc_template" 
+"# flutter_bloc_template" 

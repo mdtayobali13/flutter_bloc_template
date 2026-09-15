@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart' hide Text;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod_template/utils/app_log.dart';
-import 'package:flutter_riverpod_template/widgets/texts/languages/language_provider.dart';
-import 'package:flutter_riverpod_template/widgets/texts/app_text.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc_template/utils/app_log.dart';
+import 'package:flutter_bloc_template/widgets/texts/languages/language_cubit.dart';
+import 'package:flutter_bloc_template/widgets/texts/app_text.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart';
 import 'package:translator/translator.dart';
 
-class AppHtmlWidget extends ConsumerStatefulWidget {
+class AppHtmlWidget extends StatefulWidget {
   const AppHtmlWidget({super.key, required this.html, this.textStyle, this.translate = true, this.isDynamic = true});
 
   final String html;
@@ -18,10 +18,10 @@ class AppHtmlWidget extends ConsumerStatefulWidget {
   final bool isDynamic;
 
   @override
-  ConsumerState<AppHtmlWidget> createState() => _AppHtmlWidgetState();
+  State<AppHtmlWidget> createState() => _AppHtmlWidgetState();
 }
 
-class _AppHtmlWidgetState extends ConsumerState<AppHtmlWidget> {
+class _AppHtmlWidgetState extends State<AppHtmlWidget> {
   /// Translate HTML using Google Translator + SharedPreferences cache
   Future<String> _translateHtml(String langCode) async {
     try {
@@ -83,7 +83,7 @@ class _AppHtmlWidgetState extends ConsumerState<AppHtmlWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final language = ref.watch(languageProvider);
+    final language = context.watch<LanguageCubit>().state;
 
     if (!widget.isDynamic) {
       return HtmlWidget(widget.html, textStyle: widget.textStyle, enableCaching: true);

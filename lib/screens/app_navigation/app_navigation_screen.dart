@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod_template/constant/app_colors.dart';
-import 'package:flutter_riverpod_template/screens/app_navigation/widgets/custom_bottom_nav_bar.dart';
+import 'package:flutter_bloc_template/constant/app_colors.dart';
+import 'package:flutter_bloc_template/screens/app_navigation/widgets/custom_bottom_nav_bar.dart';
 import 'package:go_router/go_router.dart';
 
 class AppNavigationScreen extends StatelessWidget {

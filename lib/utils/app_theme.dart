@@ -1,41 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/legacy.dart';
-import 'package:flutter_riverpod_template/services/storage/storage_services.dart';
-import 'package:flutter_riverpod_template/utils/app_log.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc_template/services/storage/storage_services.dart';
+import 'package:flutter_bloc_template/utils/app_log.dart';
 
-class ThemeNotifier extends StateNotifier<ThemeMode> {
-  bool isDarkMode = false;
-  StorageServices storageServices = StorageServices.instance;
+/// Cubit to manage app theme (Light / Dark mode) with persistence
+class ThemeCubit extends Cubit<ThemeMode> {
+  final StorageServices _storageServices = StorageServices.instance;
 
-  ThemeNotifier() : super(ThemeMode.light) {
+  ThemeCubit() : super(ThemeMode.light) {
     _init();
   }
 
   Future<void> _init() async {
     try {
-      isDarkMode = await storageServices.isDarkMode();
-      state = isDarkMode ? ThemeMode.dark : ThemeMode.light;
+      final isDark = await _storageServices.isDarkMode();
+      emit(isDark ? ThemeMode.dark : ThemeMode.light);
     } catch (e) {
-      errorLog("_init. ThemeNotifier", e);
+      errorLog("_init ThemeCubit", e);
     }
   }
 
   void toggleTheme() {
     try {
       if (state == ThemeMode.light) {
-        state = ThemeMode.dark;
-        storageServices.setDarkMode(true);
+        emit(ThemeMode.dark);
+        _storageServices.setDarkMode(true);
       } else {
-        state = ThemeMode.light;
-        storageServices.setDarkMode(false);
+        emit(ThemeMode.light);
+        _storageServices.setDarkMode(false);
       }
     } catch (e) {
-      errorLog("toggleTheme", e);
+      errorLog("toggleTheme ThemeCubit", e);
     }
   }
-}
 
-/// Riverpod provider for theme
-final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
-  return ThemeNotifier();
-});
+  void setTheme(ThemeMode mode) {
+    emit(mode);
+    _storageServices.setDarkMode(mode == ThemeMode.dark);
+  }
+}
