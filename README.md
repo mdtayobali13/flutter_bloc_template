@@ -1,6 +1,6 @@
-# 🚀 Flutter Riverpod Template
+# 🚀 Flutter BLoC Template
 
-A production-ready, security-hardened Flutter starter template with Riverpod state management, Go Router navigation, Dio API layer, Socket.IO real-time support, and 26 industry-standard security best practices applied out of the box.
+A production-ready, security-hardened Flutter starter template with BLoC state management, Go Router navigation, Dio API layer, Socket.IO real-time support, and industry-standard architecture out of the box.
 
 ---
 
@@ -28,14 +28,14 @@ A production-ready, security-hardened Flutter starter template with Riverpod sta
 
 ## ✨ Features
 
-- ✅ **Riverpod 3.x** state management with full lifecycle observer
+- ✅ **BLoC & Cubit** state management with full lifecycle observer
 - ✅ **Go Router** with internet-gating redirect and 404 handling
 - ✅ **Dio** HTTP client with interceptors, token refresh, and typed results
 - ✅ **Socket.IO** with auto-reconnect and authenticated handshake
 - ✅ **Secure token storage** via Android Keystore / iOS Keychain
-- ✅ **Dark / Light theme** with persistent preference
-- ✅ **Multi-language** translation support with caching
-- ✅ **Real internet reachability** check (not just connectivity)
+- ✅ **Dark / Light theme** with persistent preference via `ThemeCubit`
+- ✅ **Multi-language** translation support with caching via `LanguageCubit`
+- ✅ **Real internet reachability** check via `InternetCubit`
 - ✅ **Custom widgets** — inputs, buttons, image pickers, dialogs, skeletons
 - ✅ **OTP utilities**, email masking, date/time formatting
 - ✅ **Firebase** push notifications (FCM)
@@ -48,7 +48,8 @@ A production-ready, security-hardened Flutter starter template with Riverpod sta
 
 | Package | Version | Purpose |
 |---|---|---|
-| `flutter_riverpod` | ^3.3.1 | State management |
+| `flutter_bloc` | ^9.1.1 | State management |
+| `equatable` | ^2.1.0 | Value equality for states |
 | `go_router` | ^17.2.1 | Declarative routing |
 | `dio` | ^5.9.2 | HTTP client |
 | `flutter_secure_storage` | ^9.2.4 | Encrypted token storage |
@@ -412,65 +413,80 @@ class ProductRepository {
 
 ## 🔄 State Management
 
-This template uses **Riverpod 3.x** with `StateNotifierProvider` for async state.
+This template uses **flutter_bloc** (Cubit & Bloc) with `equatable` for predictable, reactive state management.
 
 ### Pattern used across all screens
 
 ```dart
-// 1. Provider
-final productProvider = StateNotifierProvider<ProductNotifier,
-    AsyncValue<List<Product>>>((ref) => ProductNotifier());
+// 1. State
+class ProductState extends Equatable {
+  final ProductStatus status;
+  final List<Product> products;
+  final String? errorMessage;
 
-// 2. Notifier
-class ProductNotifier extends StateNotifier<AsyncValue<List<Product>>> {
-  ProductNotifier() : super(const AsyncLoading()) {
+  const ProductState({
+    this.status = ProductStatus.initial,
+    this.products = const [],
+    this.errorMessage,
+  });
+
+  bool get isLoading => status == ProductStatus.loading;
+  bool get isSuccess => status == ProductStatus.success;
+  bool get isError => status == ProductStatus.error;
+
+  @override
+  List<Object?> get props => [status, products, errorMessage];
+}
+
+// 2. Cubit
+class ProductCubit extends Cubit<ProductState> {
+  ProductCubit() : super(const ProductState(status: ProductStatus.loading)) {
     load();
   }
 
   Future<void> load() async {
     try {
       final data = await ProductRepository.instance.getProducts();
-      state = AsyncData(data);
-    } catch (e, st) {
-      state = AsyncError(e, st);
+      emit(state.copyWith(status: ProductStatus.success, products: data));
+    } catch (e) {
+      emit(state.copyWith(status: ProductStatus.error, errorMessage: e.toString()));
     }
   }
 }
 
 // 3. In widget
-class ProductScreen extends ConsumerWidget {
+class ProductScreen extends StatelessWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(productProvider);
-    return state.when(
-      data: (products) => ProductList(products: products),
-      loading: () => const AppLoading(),
-      error: (e, _) => ErrorText(message: e.toString()),
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => ProductCubit(),
+      child: BlocBuilder<ProductCubit, ProductState>(
+        builder: (context, state) {
+          if (state.isLoading) return const AppLoading();
+          if (state.isError) return ErrorText(message: state.errorMessage ?? "Error");
+          return ProductList(products: state.products);
+        },
+      ),
     );
   }
 }
 ```
 
-### ProviderObserver
+### AppBlocObserver
 
-Every provider lifecycle event is logged in debug mode via `LoggerObServer`:
+Every BLoC lifecycle event is logged in debug mode via `AppBlocObserver`:
 
 ```
-🟢 Provider Added   — name, type, value
-🌀 Provider Updated — previous value → new value
-🔴 Provider Disposed
-⚠️ Provider Error   — error + stack trace
-🚀 Mutation Started / ✅ Success / ❌ Error
+🟢 BLoC Created   — type, initial state
+🌀 State Changed  — current state → next state
+⚡ Transition     — event, current state → next state
+⚠️ BLoC Error     — error + stack trace
+🔴 BLoC Closed    — type
 ```
 
-### Resetting all providers (logout)
+### Resetting app state (logout)
 
-Call `resetRiverpod()` from `MainAppEntry` to wipe all provider state on logout:
-
-```dart
-// Access via a callback passed down or a global key
-mainAppEntryState.resetRiverpod();
-```
+Call `resetApp()` from `MainAppEntry` to refresh all global BLoC providers on logout.
 
 ---
 
@@ -711,7 +727,7 @@ class ProductScreen extends ConsumerWidget {
 | 22 | Email normalised (trim + lowercase) before all calls | `auth_repository.dart` |
 | 23 | Typed result from login — failure reason is explicit | `auth_repository.dart` |
 | 24 | File size validated before upload (max 10 MB) | `auth_repository.dart` |
-| 25 | Internet check uses real HTTP probe, not just connectivity | `internet_check_provider.dart` |
+| 25 | Internet check uses real HTTP probe, not just connectivity | `internet_cubit.dart` |
 | 26 | Auth token sent in Socket.IO handshake headers | `app_socket_all_operation.dart` |
 
 ---
@@ -805,3 +821,4 @@ fvm flutter pub get
 
 "# flutter_riverpod_template" 
 "# flutter_riverpod_template" 
+"# flutter_bloc_template" 
